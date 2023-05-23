@@ -162,36 +162,34 @@ export const Customizer = () => {
     }, [hovered]);
 
     return (
-      <XR>
-        <group
-          ref={canvasRef}
-          onPointerOver={(e) => (
-            e.stopPropagation(), set(e.object.material.name)
-          )}
-          onPointerOut={(e) => e.intersections.length === 0 && set(null)}
-          onPointerMissed={() => (state.current = null)}
-          onClick={(e) => (
-            e.stopPropagation(), (state.current = e.object.material.name)
-          )}
-          scale={[1, 1, 1]}
-        >
-          {threeD_model.map((child, index) => (
-            <mesh
-              key={index}
-              receiveShadow
-              castShadow
-              geometry={child.geometry}
-              material={child.material}
-              material-color={
-                snap.items[child.material.name]
-                  ? snap.items[child.material.name]
-                  : "#ffffff"
-              }
-              material-map={LoadTexture(snap.textures[child.material.name])}
-            />
-          ))}
-        </group>
-      </XR>
+      <group
+        ref={canvasRef}
+        onPointerOver={(e) => (
+          e.stopPropagation(), set(e.object.material.name)
+        )}
+        onPointerOut={(e) => e.intersections.length === 0 && set(null)}
+        onPointerMissed={() => (state.current = null)}
+        onClick={(e) => (
+          e.stopPropagation(), (state.current = e.object.material.name)
+        )}
+        scale={[1, 1, 1]}
+      >
+        {threeD_model.map((child, index) => (
+          <mesh
+            key={index}
+            receiveShadow
+            castShadow
+            geometry={child.geometry}
+            material={child.material}
+            material-color={
+              snap.items[child.material.name]
+                ? snap.items[child.material.name]
+                : "#ffffff"
+            }
+            material-map={LoadTexture(snap.textures[child.material.name])}
+          />
+        ))}
+      </group>
     );
   }
 
