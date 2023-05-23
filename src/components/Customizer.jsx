@@ -28,7 +28,14 @@ import {
 } from "flowbite-react";
 import state from "../config/store";
 import { Object3D, TextureLoader } from "three";
-import { VRButton, ARButton, XR, Controllers, Hands } from "@react-three/xr";
+import {
+  VRButton,
+  ARButton,
+  XR,
+  Controllers,
+  Hands,
+  useXR,
+} from "@react-three/xr";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 
 export const Customizer = () => {
@@ -37,7 +44,9 @@ export const Customizer = () => {
   const [model, setModel] = useState("katana.glb");
   const [loadTexture, setLoadTexture] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
+  const [isAR, setAR] = useState(false);
   const textArea = useRef();
+
   let threeD_model = [];
 
   function traverseChildren(children) {
@@ -121,6 +130,7 @@ export const Customizer = () => {
     setLoadTexture(true);
   }
   function Model({ model }) {
+    const { isPresenting } = useXR();
     const snap = useSnapshot(state);
     const [hovered, set] = useState(null);
     const { scene } = useGLTF(model);
@@ -144,6 +154,7 @@ export const Customizer = () => {
         Math.sin(t / 4) / 8,
         -0.2 - (1 + Math.sin(t / 1.5)) / 20
       );
+
       canvasRef.current.position.y = (1 + Math.sin(t / 1.5)) / 10;
     });
 
@@ -172,7 +183,8 @@ export const Customizer = () => {
         onClick={(e) => (
           e.stopPropagation(), (state.current = e.object.material.name)
         )}
-        scale={[1, 1, 1]}
+        position={!isPresenting ? [0, -5, 0] : [0, 0, -1]}
+        scale={!isPresenting ? [2, 2, 2] : [1, 1, 1]}
       >
         {threeD_model.map((child, index) => (
           <mesh
@@ -195,76 +207,77 @@ export const Customizer = () => {
 
   function Picker() {
     const snap = useSnapshot(state);
-
     return (
-      <div>
-        <div
-          className={`${
-            snap.current ? "inline" : "hidden"
-          } w-full h-auto text-center flex md:flex-row flex-col justify-center place-self-center items-center`}
-        >
-          <h1 className="text-5xl capitalize ">{snap.current}</h1>
-          <HexColorPicker
-            style={{ width: 100, height: 100 }}
-            color={snap.items[snap.current]}
-            onChange={(color) => (state.items[snap.current] = color)}
-          />
-          <Button.Group>
-            <Button color="gray" onClick={() => handleDeleteSection()}>
-              Delete Section
-            </Button>
-            <Button color="gray" onClick={() => handleDefaultModel()}>
-              Delete All
-            </Button>
-            <Button color="gray" onClick={() => SwitchModel()}>
-              Change Model
-            </Button>
-          </Button.Group>
-        </div>
-
-        <div
-          className={`${
-            snap.current ? "inline" : "hidden"
-          } w-full h-auto text-center flex md:flex-row flex-col justify-center place-self-center items-center`}
-        >
-          <Button onClick={() => handleDownload()}>
-            Download Customized Model
-          </Button>
-
-          <div id="fileUpload">
-            <div className="mb-2 block">
-              <Label htmlFor="file" value="Upload file" />
-            </div>
-            <FileInput
-              id="file"
-              helperText="A profile picture is useful to confirm your are logged into your account"
-              accept="image/*"
-              onChange={(e) => handleTextureChange(e.target.files[0])}
+      !isAR && (
+        <div>
+          <div
+            className={`${
+              snap.current ? "inline" : "hidden"
+            } w-full h-auto text-center flex md:flex-row flex-col justify-center place-self-center items-center`}
+          >
+            <h1 className="text-5xl capitalize ">{snap.current}</h1>
+            <HexColorPicker
+              style={{ width: 100, height: 100 }}
+              color={snap.items[snap.current]}
+              onChange={(color) => (state.items[snap.current] = color)}
             />
+            <Button.Group>
+              <Button color="gray" onClick={() => handleDeleteSection()}>
+                Delete Section
+              </Button>
+              <Button color="gray" onClick={() => handleDefaultModel()}>
+                Delete All
+              </Button>
+              <Button color="gray" onClick={() => SwitchModel()}>
+                Change Model
+              </Button>
+            </Button.Group>
+          </div>
+
+          <div
+            className={`${
+              snap.current ? "inline" : "hidden"
+            } w-full h-auto text-center flex md:flex-row flex-col justify-center place-self-center items-center`}
+          >
+            <Button onClick={() => handleDownload()}>
+              Download Customized Model
+            </Button>
+
+            <div id="fileUpload">
+              <div className="mb-2 block">
+                <Label htmlFor="file" value="Upload file" />
+              </div>
+              <FileInput
+                id="file"
+                helperText="A profile picture is useful to confirm your are logged into your account"
+                accept="image/*"
+                onChange={(e) => handleTextureChange(e.target.files[0])}
+              />
+            </div>
+          </div>
+          <div
+            className={`${
+              snap.current ? "inline" : "hidden"
+            } w-full h-auto text-center flex md:flex-row flex-col justify-center place-self-center items-center`}
+          >
+            <div id="textarea">
+              <div className="mb-2 block">
+                <Label htmlFor="comment" value="Your message" />
+              </div>
+              <Textarea
+                ref={textArea}
+                id="comment"
+                placeholder="Leave a comment..."
+                required={true}
+                rows={4}
+              />
+              <Button type="submit" onClick={() => handleMessage()}>
+                Ask AI
+              </Button>
+            </div>
           </div>
         </div>
-        <div
-          className={`${
-            snap.current ? "inline" : "hidden"
-          } w-full h-auto text-center flex md:flex-row flex-col justify-center place-self-center items-center`}
-        >
-          <div id="textarea">
-            <div className="mb-2 block">
-              <Label htmlFor="comment" value="Your message" />
-            </div>
-            <Textarea
-              ref={textArea}
-              id="comment"
-              placeholder="Leave a comment..."
-              required={true}
-              rows={4}
-            />
-            <Button type="submit" onClick={() => handleMessage()}>
-              Ask AI
-            </Button>
-          </div>
-        </div>
-      </div>
+      )
     );
   }
 
@@ -285,12 +298,9 @@ export const Customizer = () => {
         </div>
 
         <Picker />
-        <ARButton />
+        <ARButton onClick={() => setAR(!isAR)} />
         <Canvas shadows camera={{ position: [0, 0, 4], fov: 50 }}>
           <XR>
-            <Controllers />
-            <Hands />
-
             <ambientLight intensity={0.7} />
             <spotLight
               intensity={0.5}
@@ -299,9 +309,7 @@ export const Customizer = () => {
               position={[10, 15, 10]}
               castShadow
             />
-
             <Model model={model} />
-
             <Environment preset="city" />
             <ContactShadows
               position={[0, -0.8, 0]}
