@@ -10,7 +10,7 @@ export const readerFile = (file) =>
 export const askAI = async (prompt) => {
   const openai = new OpenAIApi(
     new Configuration({
-      apiKey: "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",
+      apiKey: "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",
     })
   );
   try {

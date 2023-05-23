@@ -1,7 +1,6 @@
 "use client";
 import React, { useRef, useState, useEffect, Fragment, Suspense } from "react";
 import { Canvas, useFrame, useLoader } from "@react-three/fiber";
-
 import {
   useGLTF,
   ContactShadows,
@@ -30,6 +29,7 @@ import {
 import state from "../config/store";
 import { Object3D, TextureLoader } from "three";
 import { VRButton, ARButton, XR, Controllers, Hands } from "@react-three/xr";
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 
 export const Customizer = () => {
   const canvasRef = useRef();
@@ -39,7 +39,8 @@ export const Customizer = () => {
   const textArea = useRef();
   let threeD_model = [];
 
-  async function traverseChildren(children) {
+  function traverseChildren(children) {
+    threeD_model = [];
     for (const child of children) {
       if (child.hasOwnProperty("material")) {
         threeD_model.push({
@@ -49,7 +50,7 @@ export const Customizer = () => {
       }
 
       if (child.children && child.children.length > 0) {
-        await traverseChildren(child.children);
+        traverseChildren(child.children);
       }
     }
   }
@@ -63,6 +64,7 @@ export const Customizer = () => {
       state.items[child.material.name] = "#ffffff";
       state.textures[child.material.name] = "texture.jpg";
     });
+    state.current = null;
   }
 
   function handleTextureChange(e) {
@@ -105,11 +107,15 @@ export const Customizer = () => {
     //   "customized_model.obj"
     // );
   }
-  function LoadModel(model) {
-    return useLoader(TextureLoader, model);
+  function LoadTexture(model) {
+    const texture = model ? model : "texture.jpg";
+    return useTexture(texture);
   }
-
-  function Model() {
+  function SwitchModel() {
+    setModel("shoe-draco.glb");
+    setLoadTexture(true);
+  }
+  function Model({ model }) {
     const snap = useSnapshot(state);
     const [hovered, set] = useState(null);
     const { scene } = useGLTF(model);
@@ -117,10 +123,10 @@ export const Customizer = () => {
     try {
       if (scene.hasOwnProperty("children")) {
         traverseChildren(scene.children);
-      }
-      if (loadTexture) {
-        handleDefaultModel();
-        setLoadTexture(false);
+        if (loadTexture) {
+          handleDefaultModel();
+          setLoadTexture(false);
+        }
       }
     } catch (error) {
       console.log(error);
@@ -173,8 +179,12 @@ export const Customizer = () => {
               castShadow
               geometry={child.geometry}
               material={child.material}
-              material-color={snap.items[child.material.name]}
-              material-map={LoadModel(snap.textures[child.material.name])}
+              material-color={
+                snap.items[child.material.name]
+                  ? snap.items[child.material.name]
+                  : "#ffffff"
+              }
+              material-map={LoadTexture(snap.textures[child.material.name])}
             />
           ))}
         </group>
@@ -205,7 +215,7 @@ export const Customizer = () => {
             <Button color="gray" onClick={() => handleDefaultModel()}>
               Delete All
             </Button>
-            <Button color="gray" onClick={() => setModel("shoe-draco.glb")}>
+            <Button color="gray" onClick={() => SwitchModel()}>
               Change Model
             </Button>
           </Button.Group>
@@ -283,7 +293,7 @@ export const Customizer = () => {
               castShadow
             />
 
-            <Model />
+            <Model model={model} />
 
             <Environment preset="city" />
             <ContactShadows
