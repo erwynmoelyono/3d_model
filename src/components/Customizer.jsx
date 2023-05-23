@@ -287,7 +287,10 @@ export const Customizer = () => {
         <Picker />
         <ARButton />
         <Canvas shadows camera={{ position: [0, 0, 4], fov: 50 }}>
-          <Suspense fallback={null}>
+          <XR>
+            <Controllers />
+            <Hands />
+
             <ambientLight intensity={0.7} />
             <spotLight
               intensity={0.5}
@@ -296,9 +299,9 @@ export const Customizer = () => {
               position={[10, 15, 10]}
               castShadow
             />
-            <XR>
-              {progress >= 100 || !isLoading ? <Model model={model} /> : null}
-            </XR>
+
+            <Model model={model} />
+
             <Environment preset="city" />
             <ContactShadows
               position={[0, -0.8, 0]}
@@ -314,7 +317,7 @@ export const Customizer = () => {
               rotateSpeed={1}
               enableRotate={true}
             />
-          </Suspense>
+          </XR>
         </Canvas>
       </Fragment>
     </div>
