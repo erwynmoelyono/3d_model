@@ -34,21 +34,10 @@ import { VRButton, ARButton, XR, Controllers, Hands } from "@react-three/xr";
 export const Customizer = () => {
   const canvasRef = useRef();
   const { active, progress, loaded, total } = useProgress();
-  const [model, setModel] = useState("shoe-draco.glb");
-  const { scene } = useGLTF(model);
+  const [model, setModel] = useState("katana.glb");
+  const [loadTexture, setLoadTexture] = useState(true);
   const textArea = useRef();
   let threeD_model = [];
-
-  try {
-    traverseChildren(scene.children);
-  } catch (error) {
-    console.log(error);
-  }
-  useEffect(() => {
-    if (threeD_model) {
-      handleDefaultModel();
-    }
-  }, [scene]);
 
   async function traverseChildren(children) {
     for (const child of children) {
@@ -117,12 +106,25 @@ export const Customizer = () => {
     // );
   }
   function LoadModel(model) {
-    return useTexture(model);
+    return useLoader(TextureLoader, model);
   }
 
   function Model() {
     const snap = useSnapshot(state);
     const [hovered, set] = useState(null);
+    const { scene } = useGLTF(model);
+
+    try {
+      if (scene.hasOwnProperty("children")) {
+        traverseChildren(scene.children);
+      }
+      if (loadTexture) {
+        handleDefaultModel();
+        setLoadTexture(false);
+      }
+    } catch (error) {
+      console.log(error);
+    }
 
     useFrame((state) => {
       const t = state.clock.getElapsedTime();
