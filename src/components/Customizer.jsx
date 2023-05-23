@@ -296,9 +296,9 @@ export const Customizer = () => {
               position={[10, 15, 10]}
               castShadow
             />
-
-            {progress >= 100 || !isLoading ? <Model model={model} /> : null}
-
+            <XR>
+              {progress >= 100 || !isLoading ? <Model model={model} /> : null}
+            </XR>
             <Environment preset="city" />
             <ContactShadows
               position={[0, -0.8, 0]}
