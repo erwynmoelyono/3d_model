@@ -163,8 +163,6 @@ export const Customizer = () => {
 
     return (
       <XR>
-        <Controllers />
-        <Hands />
         <group
           ref={canvasRef}
           onPointerOver={(e) => (
