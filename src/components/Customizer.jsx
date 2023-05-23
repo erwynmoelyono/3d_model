@@ -36,6 +36,7 @@ export const Customizer = () => {
   const { active, progress, loaded, total } = useProgress();
   const [model, setModel] = useState("katana.glb");
   const [loadTexture, setLoadTexture] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const textArea = useRef();
   let threeD_model = [];
 
@@ -77,8 +78,12 @@ export const Customizer = () => {
 
   async function handleMessage() {
     try {
-      const image = await askAI(textArea.current.value);
-      state.textures[state.current] = `data:image/png;base64,${image}`;
+      setIsLoading(true);
+
+      await askAI(textArea.current.value).then((value) => {
+        state.textures[state.current] = `data:image/png;base64,${value}`;
+        setIsLoading(false);
+      });
     } catch (error) {
       console.error(error);
     }
@@ -272,14 +277,17 @@ export const Customizer = () => {
       <Fragment>
         <div
           className={`${
-            progress >= 100 ? "hidden" : ""
-          } flex items-center justify-center h-screen`}
+            progress >= 100 || isLoading
+              ? "hidden"
+              : "flex items-center justify-center h-screen"
+          }`}
         >
           <Spinner
             aria-label="Center-aligned spinner example"
             className="w-[100px] h-[100px]"
           />
         </div>
+
         <Picker />
         <ARButton />
         <Canvas shadows camera={{ position: [0, 0, 4], fov: 50 }}>
@@ -293,7 +301,7 @@ export const Customizer = () => {
               castShadow
             />
 
-            <Model model={model} />
+            {progress >= 100 || !isLoading ? <Model model={model} /> : null}
 
             <Environment preset="city" />
             <ContactShadows

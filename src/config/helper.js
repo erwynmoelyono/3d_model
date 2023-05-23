@@ -10,7 +10,7 @@ export const readerFile = (file) =>
 export const askAI = async (prompt) => {
   const openai = new OpenAIApi(
     new Configuration({
-      apiKey: "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",
+      apiKey: "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",
     })
   );
   try {
@@ -22,7 +22,6 @@ export const askAI = async (prompt) => {
     });
 
     const image = response.data.data[0].b64_json;
-
     return image;
   } catch (error) {
     console.error(error);
