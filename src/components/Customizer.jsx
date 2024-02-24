@@ -9,6 +9,8 @@ import {
   OrbitControls,
   Stage,
   useProgress,
+  TransformControls,
+  StandardEffects,
   Decal,
 } from "@react-three/drei";
 
@@ -37,11 +39,13 @@ import {
   useXR,
 } from "@react-three/xr";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
+import { Controls, useControl } from "react-three-gui";
+import { useControls } from "leva";
 
 export const Customizer = () => {
   const canvasRef = useRef();
   const { active, progress, loaded, total } = useProgress();
-  const [model, setModel] = useState("katana.glb");
+  const [model, setModel] = useState("dickies_long_sleeve_shirt.glb");
   const [loadTexture, setLoadTexture] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [isAR, setAR] = useState(false);
@@ -67,12 +71,14 @@ export const Customizer = () => {
 
   function handleDeleteSection() {
     state.items[state.current] = "#ffffff";
-    state.textures[state.current] = "texture.jpg";
+    state.textures[state.current] =
+      "https://erwin-next-ecom.s3.ap-southeast-2.amazonaws.com/texture.jpg";
   }
   function handleDefaultModel() {
     threeD_model.forEach((child, index) => {
       state.items[child.material.name] = "#ffffff";
-      state.textures[child.material.name] = "texture.jpg";
+      state.textures[child.material.name] =
+        "https://erwin-next-ecom.s3.ap-southeast-2.amazonaws.com/texture.jpg";
     });
     state.current = null;
   }
@@ -87,11 +93,12 @@ export const Customizer = () => {
 
   async function handleMessage() {
     try {
-      setIsLoading(true);
+      // setIsLoading(true);
 
       await askAI(textArea.current.value).then((value) => {
+        console.log(value);
         state.textures[state.current] = `data:image/png;base64,${value}`;
-        setIsLoading(false);
+        // setIsLoading(false);
       });
     } catch (error) {
       console.error(error);
@@ -122,7 +129,9 @@ export const Customizer = () => {
     // );
   }
   function LoadTexture(model) {
-    const texture = model ? model : "texture.jpg";
+    const texture = model
+      ? model
+      : "https://erwin-next-ecom.s3.ap-southeast-2.amazonaws.com/texture.jpg";
     return useTexture(texture);
   }
   function SwitchModel() {
@@ -134,7 +143,21 @@ export const Customizer = () => {
     const snap = useSnapshot(state);
     const [hovered, set] = useState(null);
     const { scene } = useGLTF(model);
+    const orbit = useRef();
+    const transform = useRef();
+    const mode = useControls("Object 3D", {
+      mode: { value: "scale", options: ["scale", "rotate", "translate"] },
+    });
 
+    useEffect(() => {
+      if (transform.current) {
+        const controls = transform.current;
+        controls.setMode(mode.mode);
+        const callback = (event) => (orbit.current.enabled = !event.value);
+        controls.addEventListener("dragging-changed", callback);
+        return () => controls.removeEventListener("dragging-changed", callback);
+      }
+    });
     try {
       if (scene.hasOwnProperty("children")) {
         traverseChildren(scene.children);
@@ -173,35 +196,40 @@ export const Customizer = () => {
     }, [hovered]);
 
     return (
-      <group
-        ref={canvasRef}
-        onPointerOver={(e) => (
-          e.stopPropagation(), set(e.object.material.name)
-        )}
-        onPointerOut={(e) => e.intersections.length === 0 && set(null)}
-        onPointerMissed={() => (state.current = null)}
-        onClick={(e) => (
-          e.stopPropagation(), (state.current = e.object.material.name)
-        )}
-        position={!isPresenting ? [0, -5, 0] : [0, 0, -1]}
-        scale={!isPresenting ? [2, 2, 2] : [1, 1, 1]}
-      >
-        {threeD_model.map((child, index) => (
-          <mesh
-            key={index}
-            receiveShadow
-            castShadow
-            geometry={child.geometry}
-            material={child.material}
-            material-color={
-              snap.items[child.material.name]
-                ? snap.items[child.material.name]
-                : "#ffffff"
-            }
-            material-map={LoadTexture(snap.textures[child.material.name])}
-          />
-        ))}
-      </group>
+      <>
+        <TransformControls ref={transform}>
+          <group
+            ref={canvasRef}
+            onPointerOver={(e) => (
+              e.stopPropagation(), set(e.object.material.name)
+            )}
+            onPointerOut={(e) => e.intersections.length === 0 && set(null)}
+            onPointerMissed={() => (state.current = null)}
+            onClick={(e) => (
+              e.stopPropagation(), (state.current = e.object.material.name)
+            )}
+            position={!isPresenting ? [0, -5, 0] : [0, 0, -1]}
+            scale={!isPresenting ? [2, 2, 2] : [1, 1, 1]}
+          >
+            {threeD_model.map((child, index) => (
+              <mesh
+                key={index}
+                receiveShadow
+                castShadow
+                geometry={child.geometry}
+                material={child.material}
+                material-color={
+                  snap.items[child.material.name]
+                    ? snap.items[child.material.name]
+                    : "#ffffff"
+                }
+                material-map={LoadTexture(snap.textures[child.material.name])}
+              />
+            ))}
+          </group>
+        </TransformControls>
+        <OrbitControls ref={orbit} />
+      </>
     );
   }
 
@@ -298,17 +326,21 @@ export const Customizer = () => {
         </div>
 
         <Picker />
-        <ARButton onClick={() => setAR(!isAR)} />
-        <Canvas shadows camera={{ position: [0, 0, 4], fov: 50 }}>
+        {/* <ARButton /> */}
+        <Canvas shadowMap camera={{ position: [0, 0, 4], fov: 50 }}>
           <XR>
             <ambientLight intensity={0.7} />
             <spotLight
-              intensity={0.5}
-              angle={0.1}
+              intensity={2}
+              position={[40, 50, 50]}
+              shadow-bias={-0.00005}
               penumbra={1}
-              position={[10, 15, 10]}
+              angle={Math.PI / 6}
+              shadow-mapSize-width={2048}
+              shadow-mapSize-height={2048}
               castShadow
             />
+
             <Model model={model} />
             <Environment preset="city" />
             <ContactShadows
@@ -318,13 +350,13 @@ export const Customizer = () => {
               blur={1.5}
               far={0.8}
             />
-            <OrbitControls
+            {/* <OrbitControls
               minPolarAngle={0} // Allows rotation below the horizon
               maxPolarAngle={Math.PI} // Allows rotation above the horizon
               enableZoom={true}
               rotateSpeed={1}
               enableRotate={true}
-            />
+            /> */}
           </XR>
         </Canvas>
       </Fragment>
